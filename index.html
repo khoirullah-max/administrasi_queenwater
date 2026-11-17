@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keuangan Queen Water</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💧%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f3f8fc;--card:#fff;--text:#12263a;--muted:#5d7287;--line:#dbe6ef;--pri:#0b7fd1;--in:#0b7fd1;--out:#e8772e;--ok:#12926b;--bad:#d1434b}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1823;--card:#14232f;--text:#e6eef5;--muted:#8fa4b6;--line:#243645;--pri:#3ba3ee;--in:#3ba3ee;--out:#f09250;--ok:#35c595;--bad:#f0737a}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:12px;margin:8px 0 16px}
+header h1{font-size:22px;margin:0}header p{margin:0;color:var(--muted);font-size:13px}
+.logo{font-size:34px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stat small{color:var(--muted);display:block}.stat b{font-size:20px}
+.in{color:var(--in)}.out{color:var(--out)}.ok{color:var(--ok)}.bad{color:var(--bad)}
+h2{font-size:16px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
+input,select,button{font:inherit;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);width:100%}
+button{cursor:pointer;width:auto;font-weight:600}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+button.sm{padding:4px 8px;font-size:12px;font-weight:500}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sec{margin-bottom:14px}
+.tablebox{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right}
+td.act{text-align:right}td.act button{margin-left:4px}
+tfoot td{font-weight:700}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.empty{color:var(--muted);text-align:center;padding:20px}
+svg text{fill:var(--muted);font-size:10px}
+.legend{font-size:12px;color:var(--muted)}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px}
+footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo">💧</div><div><h1>Keuangan Queen Water</h1><p>Catatan pemasukan &amp; pengeluaran · data tersimpan di perangkat ini</p></div></header>
+
+<div class="cards" id="cards"></div>
+
+<div class="card sec">
+  <h2 id="formTitle">Tambah transaksi</h2>
+  <form id="f">
+    <div class="grid">
+      <div><label>Tanggal</label><input type="date" id="tgl" required></div>
+      <div><label>Tempat</label><input id="tempat" list="tempatList" placeholder="mis. payangan" autocomplete="off"></div>
+      <div><label>Masuk (Rp)</label><input type="number" id="masuk" min="0" step="500" inputmode="numeric" placeholder="0"></div>
+      <div><label>Keluar (Rp)</label><input type="number" id="keluar" min="0" step="500" inputmode="numeric" placeholder="0"></div>
+      <div><label>Keterangan</label><input id="ket" placeholder="mis. bensin" autocomplete="off"></div>
+    </div>
+    <datalist id="tempatList"></datalist>
+    <div class="row"><button class="pri" id="saveBtn">Simpan</button><button type="button" id="cancelBtn" hidden>Batal</button></div>
+  </form>
+</div>
+
+<div class="card sec">
+  <h2>Riwayat transaksi</h2>
+  <div class="grid">
+    <div><label>Bulan</label><select id="fBulan"></select></div>
+    <div><label>Tempat</label><select id="fTempat"></select></div>
+    <div><label>Cari</label><input id="fCari" placeholder="tempat / keterangan"></div>
+  </div>
+  <div class="tablebox" style="margin-top:10px"><table>
+    <thead><tr><th>Tanggal</th><th>Tempat</th><th class="n">Masuk</th><th class="n">Keluar</th><th>Keterangan</th><th class="n">Saldo</th><th></th></tr></thead>
+    <tbody id="tbody"></tbody><tfoot id="tfoot"></tfoot>
+  </table></div>
+</div>
+
+<div class="two sec">
+  <div class="card"><h2>Grafik harian <span class="legend"><i style="background:var(--in)"></i>Masuk<i style="background:var(--out)"></i>Keluar</span></h2><div id="chart"></div></div>
+  <div class="card"><h2>Rekap per tempat</h2><div class="tablebox"><table style="min-width:0"><thead><tr><th>Tempat</th><th class="n">Transaksi</th><th class="n">Masuk</th></tr></thead><tbody id="rekap"></tbody></table></div></div>
+</div>
+
+<div class="card sec">
+  <h2>Data</h2>
+  <div class="row" style="margin-top:0">
+    <button id="expCsv">Unduh CSV</button>
+    <button id="expJson">Backup JSON</button>
+    <button id="impJson">Pulihkan dari JSON</button>
+    <button id="reset" class="bad">Reset ke data awal</button>
+    <input type="file" id="file" accept=".json" hidden>
+  </div>
+</div>
+<footer>Queen Water · data disimpan di browser (localStorage). Gunakan Backup JSON secara berkala.</footer>
+</div>
+
+<script>
+const SEED = [{"id": "s1", "tgl": "2026-11-01", "tempat": "payangan", "masuk": 50000, "keluar": 18000, "ket": "bensin"}, {"id": "s2", "tgl": "2026-11-01", "tempat": "ilmi", "masuk": 20000, "keluar": 0, "ket": ""}, {"id": "s3", "tgl": "2026-11-02", "tempat": "payangan", "masuk": 50000, "keluar": 10000, "ket": "bensin"}, {"id": "s4", "tgl": "2026-11-02", "tempat": "ilmi", "masuk": 25000, "keluar": 0, "ket": ""}, {"id": "s5", "tgl": "2026-11-03", "tempat": "payangan", "masuk": 30000, "keluar": 10000, "ket": "bensin"}, {"id": "s6", "tgl": "2026-11-03", "tempat": "koprasi depan", "masuk": 25000, "keluar": 0, "ket": ""}, {"id": "s7", "tgl": "2026-11-04", "tempat": "payangan", "masuk": 40000, "keluar": 10000, "ket": "bensin"}, {"id": "s8", "tgl": "2026-11-04", "tempat": "ilmi", "masuk": 20000, "keluar": 0, "ket": ""}, {"id": "s9", "tgl": "2026-11-06", "tempat": "payangan", "masuk": 50000, "keluar": 10000, "ket": "bensin"}, {"id": "s10", "tgl": "2026-11-07", "tempat": "ilmi", "masuk": 30000, "keluar": 15000, "ket": "bensin"}, {"id": "s11", "tgl": "2026-11-07", "tempat": "koprasi aliyah", "masuk": 20000, "keluar": 0, "ket": ""}, {"id": "s12", "tgl": "2026-11-08", "tempat": "", "masuk": 0, "keluar": 150000, "ket": "dandan sanyo"}, {"id": "s13", "tgl": "2026-11-09", "tempat": "payangan", "masuk": 50000, "keluar": 18000, "ket": "bensin"}, {"id": "s14", "tgl": "2026-11-10", "tempat": "payangan", "masuk": 30000, "keluar": 20000, "ket": "mkn +bensin"}, {"id": "s15", "tgl": "2026-11-11", "tempat": "koprasi ilmi", "masuk": 20000, "keluar": 0, "ket": ""}, {"id": "s16", "tgl": "2026-11-12", "tempat": "koprasi aliyah", "masuk": 15000, "keluar": 13000, "ket": ""}, {"id": "s17", "tgl": "2026-11-13", "tempat": "payangan", "masuk": 20000, "keluar": 0, "ket": ""}, {"id": "s18", "tgl": "2026-11-14", "tempat": "payangan", "masuk": 30000, "keluar": 13000, "ket": "bensin"}, {"id": "s19", "tgl": "2026-11-15", "tempat": "ilmi", "masuk": 20000, "keluar": 0, "ket": ""}, {"id": "s20", "tgl": "2026-11-15", "tempat": "pondok.kulon", "masuk": 25000, "keluar": 0, "ket": ""}, {"id": "s21", "tgl": "2026-11-17", "tempat": "", "masuk": 0, "keluar": 50000, "ket": "ban dalam"}];
+const KEY = 'queenwater.v1';
+const $ = id => document.getElementById(id);
+const rp = n => 'Rp ' + new Intl.NumberFormat('id-ID').format(n || 0);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtTgl = d => { const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; };
+const bulanNama = ym => new Date(ym + '-01T00:00').toLocaleDateString('id-ID', {month:'long', year:'numeric'});
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+
+let data = load();
+let editId = null;
+
+function load() {
+  try { const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch (e) {}
+  return structuredClone(SEED);
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+function sorted() { return data.map((x,i) => ({...x, _i:i})).sort((a,b) => a.tgl.localeCompare(b.tgl) || a._i - b._i); }
+
+function filtered(list) {
+  const b = $('fBulan').value, t = $('fTempat').value, q = $('fCari').value.trim().toLowerCase();
+  return list.filter(x => (!b || x.tgl.startsWith(b)) && (!t || x.tempat === t) &&
+    (!q || (x.tempat + ' ' + x.ket).toLowerCase().includes(q)));
+}
+
+function fillFilters() {
+  const list = sorted();
+  const bulan = [...new Set(list.map(x => x.tgl.slice(0,7)))];
+  const tempat = [...new Set(list.map(x => x.tempat).filter(Boolean))].sort();
+  const cb = $('fBulan').value, ct = $('fTempat').value;
+  $('fBulan').innerHTML = '<option value="">Semua bulan</option>' + bulan.map(b => `<option value="${b}">${bulanNama(b)}</option>`).join('');
+  $('fTempat').innerHTML = '<option value="">Semua tempat</option>' + tempat.map(t => `<option>${esc(t)}</option>`).join('');
+  $('fBulan').value = bulan.includes(cb) ? cb : '';
+  $('fTempat').value = tempat.includes(ct) ? ct : '';
+  $('tempatList').innerHTML = tempat.map(t => `<option value="${esc(t)}">`).join('');
+}
+
+function render() {
+  fillFilters();
+  const all = sorted();
+  let run = 0;
+  all.forEach(x => { run += x.masuk - x.keluar; x.saldo = run; });
+  const tm = all.reduce((s,x) => s + x.masuk, 0), tk = all.reduce((s,x) => s + x.keluar, 0);
+  $('cards').innerHTML = `
+    <div class="card stat"><small>Total masuk</small><b class="in">${rp(tm)}</b></div>
+    <div class="card stat"><small>Total keluar</small><b class="out">${rp(tk)}</b></div>
+    <div class="card stat"><small>Saldo akhir</small><b class="${tm-tk>=0?'ok':'bad'}">${rp(tm-tk)}</b></div>
+    <div class="card stat"><small>Jumlah transaksi</small><b>${all.length}</b></div>`;
+
+  const view = filtered(all);
+  $('tbody').innerHTML = view.length ? view.map(x => `<tr>
+      <td>${fmtTgl(x.tgl)}</td><td>${esc(x.tempat) || '–'}</td>
+      <td class="n in">${x.masuk ? rp(x.masuk) : ''}</td><td class="n out">${x.keluar ? rp(x.keluar) : ''}</td>
+      <td>${esc(x.ket)}</td><td class="n">${rp(x.saldo)}</td>
+      <td class="act"><button class="sm" data-e="${x.id}">Edit</button><button class="sm" data-d="${x.id}">Hapus</button></td></tr>`).join('')
+    : '<tr><td colspan="7" class="empty">Belum ada transaksi</td></tr>';
+  const vm = view.reduce((s,x) => s + x.masuk, 0), vk = view.reduce((s,x) => s + x.keluar, 0);
+  $('tfoot').innerHTML = view.length ? `<tr><td colspan="2">Total tampil</td><td class="n in">${rp(vm)}</td><td class="n out">${rp(vk)}</td><td>Selisih</td><td class="n">${rp(vm-vk)}</td><td></td></tr>` : '';
+
+  const rk = {};
+  view.forEach(x => { if (x.masuk) { const k = x.tempat || '–'; rk[k] = rk[k] || {n:0, m:0}; rk[k].n++; rk[k].m += x.masuk; } });
+  const rows = Object.entries(rk).sort((a,b) => b[1].m - a[1].m);
+  $('rekap').innerHTML = rows.length ? rows.map(([k,v]) => `<tr><td>${esc(k)}</td><td class="n">${v.n}</td><td class="n in">${rp(v.m)}</td></tr>`).join('') : '<tr><td colspan="3" class="empty">Belum ada data</td></tr>';
+
+  drawChart(view);
+}
+
+function drawChart(view) {
+  const byDay = {};
+  view.forEach(x => { const d = byDay[x.tgl] = byDay[x.tgl] || {m:0, k:0}; d.m += x.masuk; d.k += x.keluar; });
+  const days = Object.keys(byDay).sort().slice(-14);
+  if (!days.length) { $('chart').innerHTML = '<div class="empty">Belum ada data</div>'; return; }
+  const W = 560, H = 210, pl = 8, pb = 22, pt = 10, ph = H - pb - pt;
+  const max = Math.max(...days.map(d => Math.max(byDay[d].m, byDay[d].k)), 1);
+  const step = (W - pl) / days.length, bw = Math.min(14, step / 2.6);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Grafik pemasukan dan pengeluaran harian">`;
+  days.forEach((d, i) => {
+    const cx = pl + step * i + step / 2, v = byDay[d];
+    const hm = v.m / max * ph, hk = v.k / max * ph;
+    s += `<rect x="${cx - bw - 1}" y="${pt + ph - hm}" width="${bw}" height="${hm}" rx="2" fill="var(--in)"><title>${fmtTgl(d)} masuk ${rp(v.m)}</title></rect>`;
+    s += `<rect x="${cx + 1}" y="${pt + ph - hk}" width="${bw}" height="${hk}" rx="2" fill="var(--out)"><title>${fmtTgl(d)} keluar ${rp(v.k)}</title></rect>`;
+    s += `<text x="${cx}" y="${H - 6}" text-anchor="middle">${d.slice(8)}</text>`;
+  });
+  s += `<line x1="0" x2="${W}" y1="${pt + ph}" y2="${pt + ph}" stroke="var(--line)"/></svg>`;
+  $('chart').innerHTML = s + `<div class="legend">Maks. ${rp(max)} · ${days.length} hari terakhir</div>`;
+}
+
+function resetForm() {
+  editId = null; $('f').reset(); $('tgl').value = today();
+  $('formTitle').textContent = 'Tambah transaksi'; $('saveBtn').textContent = 'Simpan'; $('cancelBtn').hidden = true;
+}
+
+$('f').addEventListener('submit', e => {
+  e.preventDefault();
+  const rec = { tgl: $('tgl').value, tempat: $('tempat').value.trim().toLowerCase(),
+    masuk: Math.max(0, +$('masuk').value || 0), keluar: Math.max(0, +$('keluar').value || 0), ket: $('ket').value.trim() };
+  if (!rec.masuk && !rec.keluar) { alert('Isi nominal masuk atau keluar.'); return; }
+  if (editId) { const i = data.findIndex(x => x.id === editId); data[i] = { ...data[i], ...rec }; }
+  else data.push({ id: 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), ...rec });
+  save(); resetForm(); render();
+});
+$('cancelBtn').onclick = resetForm;
+
+$('tbody').addEventListener('click', e => {
+  const ed = e.target.dataset.e, de = e.target.dataset.d;
+  if (ed) {
+    const x = data.find(r => r.id === ed); editId = ed;
+    $('tgl').value = x.tgl; $('tempat').value = x.tempat; $('masuk').value = x.masuk || ''; $('keluar').value = x.keluar || ''; $('ket').value = x.ket;
+    $('formTitle').textContent = 'Edit transaksi'; $('saveBtn').textContent = 'Simpan perubahan'; $('cancelBtn').hidden = false;
+    $('f').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  if (de && confirm('Hapus transaksi ini?')) { data = data.filter(r => r.id !== de); save(); if (editId === de) resetForm(); render(); }
+});
+['fBulan','fTempat'].forEach(id => $(id).addEventListener('change', render));
+$('fCari').addEventListener('input', render);
+
+function download(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('expCsv').onclick = () => {
+  const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const lines = ['tanggal,tempat,masuk,keluar,keterangan,saldo'];
+  sorted().reduce((run, x) => { run += x.masuk - x.keluar; lines.push([x.tgl, q(x.tempat), x.masuk, x.keluar, q(x.ket), run].join(',')); return run; }, 0);
+  download('keuangan-queen-water.csv', '\ufeff' + lines.join('\n'), 'text/csv');
+};
+$('expJson').onclick = () => download('backup-queen-water-' + today() + '.json', JSON.stringify(data, null, 1), 'application/json');
+$('impJson').onclick = () => $('file').click();
+$('file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const arr = JSON.parse(await f.text());
+    if (!Array.isArray(arr) || !arr.every(x => x && typeof x.tgl === 'string')) throw 0;
+    if (!confirm(`Ganti semua data dengan ${arr.length} transaksi dari file ini?`)) return;
+    data = arr.map((x,i) => ({ id: x.id || 'i' + i, tgl: x.tgl, tempat: x.tempat || '', masuk: +x.masuk || 0, keluar: +x.keluar || 0, ket: x.ket || '' }));
+    save(); render();
+  } catch (err) { alert('File tidak valid.'); }
+  e.target.value = '';
+};
+$('reset').onclick = () => { if (confirm('Kembalikan ke data awal dari Excel? Perubahan Anda akan hilang.')) { data = structuredClone(SEED); save(); resetForm(); render(); } };
+
+resetForm(); render();
+</script>
+</body>
+</html>
